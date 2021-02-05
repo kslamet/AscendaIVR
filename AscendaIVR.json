@@ -1,0 +1,287 @@
+{
+  "description": "Ascenda IVR",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "getCreditCardToken",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 110,
+          "y": 30
+        }
+      }
+    },
+    {
+      "name": "processToken",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "getDateOfBirth",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 0,
+          "y": 540
+        },
+        "loop": 1,
+        "say": "Your token is the following: {{widgets.getToken.parsed.token}}",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "getCreditCardToken",
+      "type": "add-twiml-redirect",
+      "transitions": [
+        {
+          "next": "processToken",
+          "event": "return"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 10,
+          "y": 270
+        },
+        "method": "POST",
+        "url": "https://lilac-earwig-7081.twil.io/simpleget",
+        "timeout": "14400"
+      }
+    },
+    {
+      "name": "getDateOfBirth",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "setTokenAndDOB",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 10,
+          "y": 800
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "What's your birthday?",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "setTokenAndDOB",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "getPointsBalance",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{widgets.getToken.parsed.token}}",
+            "key": "myToken"
+          },
+          {
+            "value": "{{widgets.getDateOfBirth.Digits}}",
+            "key": "dateOfBirth"
+          }
+        ],
+        "offset": {
+          "x": 10,
+          "y": 1060
+        }
+      }
+    },
+    {
+      "name": "readPointsBalance",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "gatherSpeakToAgent",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 10,
+          "y": 1580
+        },
+        "loop": 1,
+        "say": "Your points balance is 1523."
+      }
+    },
+    {
+      "name": "getPointsBalance",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "readPointsBalance",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 10,
+          "y": 1310
+        },
+        "url": "https://lilac-earwig-7081.twil.io/simpleget"
+      }
+    },
+    {
+      "name": "gatherSpeakToAgent",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "speakToAgentSplit",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 20,
+          "y": 1860
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Would you like to speak to an agent? Press 1 for yes, 2 for no.",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "speakToAgentSplit",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "gatherSpeakToAgent",
+          "event": "noMatch"
+        },
+        {
+          "next": "send_to_flex_1",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Speak to Agent",
+              "arguments": [
+                "{{widgets.gatherSpeakToAgent.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "goodbye",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Agent not required",
+              "arguments": [
+                "{{widgets.gatherSpeakToAgent.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gatherSpeakToAgent.Digits}}",
+        "offset": {
+          "x": 20,
+          "y": 2120
+        }
+      }
+    },
+    {
+      "name": "send_to_flex_1",
+      "type": "send-to-flex",
+      "transitions": [
+        {
+          "event": "callComplete"
+        },
+        {
+          "event": "failedToEnqueue"
+        },
+        {
+          "event": "callFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -230,
+          "y": 2410
+        },
+        "workflow": "WW57d8cd76437db24881e7c4451488f0eb",
+        "channel": "TC047c2e264be36735923c29b2b2c4814d"
+      }
+    },
+    {
+      "name": "goodbye",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 220,
+          "y": 2430
+        },
+        "loop": 1,
+        "say": "Thank you for calling us. Goodbye!"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}

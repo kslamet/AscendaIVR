@@ -1,0 +1,75 @@
+{
+  "description": "ReadMyTokenIVR",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "next": "getToken",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 110,
+          "y": 30
+        }
+      }
+    },
+    {
+      "name": "sayToken",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 10,
+          "y": 560
+        },
+        "loop": 2,
+        "say": ". . . . . . . . . . . . . . . . . . . . . . . . Your token is entered {{widgets.getToken.token}}",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "getToken",
+      "type": "add-twiml-redirect",
+      "transitions": [
+        {
+          "next": "sayToken",
+          "event": "return"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 70,
+          "y": 280
+        },
+        "method": "POST",
+        "url": "https://lilac-earwig-7081.twil.io/simpleget",
+        "timeout": "14400"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
